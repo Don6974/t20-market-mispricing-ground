@@ -1,0 +1,21 @@
+
+# Python environment
+.venv/
+__pycache__/
+*.pyc
+*.egg-info/
+
+# Local configuration
+.agents/
+.env
+
+# Historical Betfair data
+*.csv
+*.sqlite
+*.sqlite3
+*.tar
+*.bz2
+
+# Generated outputs
+outputs/
+data/raw/
