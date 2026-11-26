@@ -29,7 +29,7 @@ missing = [
     if not p.is_file()
 ]
 if missing:
-    st.error("Missing local data files:\n" + "\n".join(missing))
+    st.info("Local licensed research data are not installed on this machine. "        "The public app contains a synthetic demo; historical research is local-only. "        "Missing paths: " + ", ".join(missing))
     st.stop()
 
 
@@ -211,7 +211,6 @@ for runner_id, group in prices.groupby("runner_id"):
         "exact_duplicates_removed": (
             original_rows
             - len(group)
-            - conflicting_times
         ),
         "conflicting_timestamps": conflicting_times,
         "recorded_price_changes": int(changes.sum()),
@@ -250,3 +249,42 @@ if not diagnostics_df.empty:
         "between recorded LTP updates, not periods "
         "when a market was continuously available."
     )
+
+st.divider()
+st.subheader("2021–2026 Historical Market Analysis")
+
+annual_file = (
+    BASE / "annual_market_statistics.csv"
+)
+
+if annual_file.exists():
+    annual = pd.read_csv(annual_file)
+    annual["year"] = annual["year"].astype(str)
+
+    col1, col2 = st.columns(2)
+
+    with col1:
+        st.write("Markets by year")
+        st.bar_chart(
+            annual.set_index("year")["markets"]
+        )
+
+    with col2:
+        st.write("Recorded LTP observations by year")
+        st.bar_chart(
+            annual.set_index("year")["observations"]
+        )
+
+    st.dataframe(
+        annual,
+        hide_index=True,
+        use_container_width=True
+    )
+
+    st.caption(
+        "Coverage reflects available historical "
+        "data and candidate market selection, "
+        "not actual betting activity or profit."
+    )
+else:
+    st.info("Annual statistics CSV not found.")
