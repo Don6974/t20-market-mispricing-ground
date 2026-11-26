@@ -1,95 +1,181 @@
 # T20 Market Mispricing Research Lab
 
-**Author:** Sugandhika Dontha  
-**Stage:** Research prototype. **Not a tested profitable betting strategy.**
+**Sugandhika Dontha | Cricket Analytics Project**
 
-[Project 1 — T20 chase probability model](https://github.com/Don6974/t20-cricket-win-probability-predictor)
+[Live App](https://dontha-t20-market-mispricing-ground.streamlit.app/) | [Project 1 – T20 Win Probability Predictor](https://github.com/Don6974/t20-cricket-win-probability-predictor)
 
-## Why this exists
+## About this project
 
-A win-probability predictor does not show whether an available market price is attractive. This second project provides an auditable, timestamp-aware research pipeline comparing model probabilities against historical quotes, applying estimated execution costs, and reporting *hypothetical* selection performance.
+I built this project to study how betting market prices change during T20 cricket matches and explore whether a win-probability model could help identify differences between predicted probabilities and market prices.
 
-**Default data is 100% synthetic** (outcomes, model probabilities, odds, timestamps). Any sample ROI produced by the demo is **NOT** historical evidence. This repo does **not** yet include licensed/verified historical odds, synced ball timestamps, or evidence of profitable wagers. Uploading a CSV marked `historical` merely labels user-supplied data; it does not independently verify its origin.
+In my first project, I developed a model that estimates a team's chances of winning a T20 match based on the match situation.
 
-## Run locally
+For this second project, I wanted to understand the betting market side of cricket. I started by collecting historical Betfair data, checking its quality and analysing how prices moved during matches.
+
+The project includes historical market analysis and a separate trading demonstration that uses simulated data.
+
+## Data collection and filtering
+
+I downloaded historical Betfair cricket market data covering 2021 to 2026. I also used Cricsheet's ball-by-ball T20 records to identify possible matches.
+
+The original data contained different types of cricket betting markets, so I filtered it in stages.
+
+1. **Match odds:** I selected markets related to the match winner rather than individual player performances or innings totals.
+2. **Two-team markets:** I looked for markets with two selections that could represent the competing teams.
+3. **T20 matching:** I compared team names and match dates with Cricsheet's T20 records.
+4. **Historical prices:** I checked whether the selected markets had recorded prices, particularly during live play.
+5. **Data cleaning:** I removed identical repeated price observations and checked for conflicting timestamps.
+6. **Market completeness:** I kept markets where both selections had usable price histories in the cleaned in-play data.
+
+The name-and-date matching process identified **1,449 possible T20 markets**.
+
+After checking price availability and runner coverage, **1,391 candidate markets** remained in the main analysis.
+
+These are candidate matches. The matching process does not independently confirm that every Betfair market belongs to the correct Cricsheet fixture.
+
+## Historical market analysis
+
+The annual analysis covers **338,395 recorded last-traded price observations** from 2021 to 2026.
+
+| Year | Markets | Price observations |
+|---|---:|---:|
+| 2021 | 105 | 30,631 |
+| 2022 | 160 | 46,538 |
+| 2023 | 137 | 34,632 |
+| 2024 | 370 | 92,117 |
+| 2025 | 285 | 67,647 |
+| 2026 | 334 | 66,830 |
+| **Total** | **1,391** | **338,395** |
+
+These figures describe the selected dataset, not the entire T20 betting market.
+
+I analysed how recorded prices changed over time, how frequently updates occurred, and how market coverage varied across years.
+
+I also looked at the size of movements in implied probability, gaps between observations and markets with limited price history.
+
+One thing I learned was that simply counting price changes is not enough. A move from 2.00 to 1.99 is very different from a move from 2.00 to 1.40, even though both count as one price change.
+
+The analysis therefore looks at the size of probability movements as well as their frequency.
+
+## Historical dashboard
+
+I built an interactive Streamlit dashboard to explore the historical data.
+
+The local dashboard allows me to select a market and view:
+
+- Historical last-traded prices for both selections.
+- Implied probabilities calculated from decimal odds.
+- Price movements and gaps between recorded updates.
+- Runner-level statistics and data-quality checks.
+- Annual market coverage and research summaries.
+
+I also built a Research Audit page to show which parts of the historical data are usable and which still require verification.
+
+The historical price files are stored locally and are not included in this public GitHub repository.
+
+## Trading research demonstration
+
+The public app includes a separate demonstration of how model probabilities can be compared with betting odds.
+
+It calculates implied probabilities, estimates potential value after commission and assumed price slippage, and shows hypothetical betting results.
+
+It also checks quote timestamps and rejects quotes that are too old or come from after the supposed decision time.
+
+The demonstration uses **simulated data**, not the historical Betfair observations analysed in the local dashboard.
+
+Its profit and loss results are examples used to test the calculations. They are not evidence of a profitable betting strategy.
+
+[Open the Streamlit App](https://dontha-t20-market-mispricing-ground.streamlit.app/)
+
+## Tools used
+
+| Tool | How I used it |
+|---|---|
+| Python | Extracting, cleaning and analysing historical data |
+| Pandas | Data filtering, calculations and summaries |
+| SQLite and SQL | Storing and querying historical price records |
+| Streamlit | Building the dashboards |
+| Pytest | Testing parts of the analysis code |
+| Git and GitHub | Version control and sharing the project |
+
+## Running the project
+
+Clone the repository and set up a Python environment.
 
 ```bash
-git clone https://github.com/Don6974/t20-market-mispricing-lab.git
-cd t20-market-mispricing-lab
-python -m venv .venv
-source .venv/bin/activate   # Windows: .venv\Scripts\activate
-pip install -r requirements-dev.txt
-pytest -q
-python run_backtest.py
-streamlit run app.py
+git clone https://github.com/Don6974/t20-market-mispricing-ground.git
+cd t20-market-mispricing-ground
+
+python3 -m venv .venv
+source .venv/bin/activate
+
+python -m pip install -r requirements-dev.txt
+python -m pytest -q
+python -m streamlit run app.py
 ```
 
-For Streamlit Community Cloud: public GitHub repo, branch `main`, entry `app.py`, Python 3.12. The bundled demo requires no secret key or bookmaker account.
+The main app runs using simulated data and does not require the historical Betfair files.
 
-## Data contract for a historical quote CSV
+To run the historical analysis, the original data and locally generated CSV and SQLite files are also required.
 
-One row per *available* price at a decision point, with columns:
+The research pipeline can then be run using:
 
-| Column | Meaning |
-| --- | --- |
-| `match_id` | Stable match identifier, ideally mapped to Cricsheet + exchange event ID |
-| `decision_ts` | UTC timestamp at which a hypothetical decision could have occurred |
-| `quote_ts` | UTC timestamp when that exact quote became available |
-| `selection` | Selection the wager is placed on (e.g., chasing_team) |
-| `decimal_odds` | Back odds at the timestamp (not a closing price or retrospectively selected maximum) |
-| `model_probability` | As-of estimated probability for the same selection |
-| `outcome` | Settled selection result, 1 or 0 (used **only for evaluation**) |
-| `source` | Provenance label / exchange feed name |
-| `data_kind` | `synthetic` or `historical` — user's label, not independent verification |
+```bash
+python scripts/final_research_pipeline.py
+```
 
-Timestamp inequalities enforced: `quote_ts <= decision_ts`, and optionally `decision_ts - quote_ts <= max_age_seconds` for candidate selection. Stale quotes are counted and rejected. Only one earliest qualifying opportunity per match is selected by default. A later quote cannot be used to revise an earlier decision. To prevent overlap and correlated exposure, one match/one selection is the starting constraint.
+By default, the script reads the local historical data under `~/Downloads/betfair_project2/t20_market_history` and saves its reports in the `research_outputs` folder.
 
-### Crucial limits of CSV validation
+### Historical quote input format
 
-Cricsheet records ball sequence but generally **not the actual exchange-available quote per ball**. To reconstruct genuine in-play states you need contemporaneous event timing, exact match/runner mapping, suspension windows, and odds feed timestamps. Do **not** align a ball with a quote solely by over number or assume delivery timestamps from approximate broadcast timelines. Model probability features and weights must also be available **as of decision time**. This repo checks quote chronology but cannot independently authenticate probability lineage.
+The trading demonstration can also accept a CSV containing probability estimates and betting quotes.
 
-## Economics
+The required columns are:
 
-For decimal back odds `o`, downward assumed odds slippage `s`, commission fraction `c` charged on winning profits, and model probability `p`:
+| Column | Description |
+| `match_id` | Match identifier |
+| `decision_ts` | Time of the proposed decision |
+| `quote_ts` | Time the quote was recorded |
+| `selection` | Team or outcome being considered |
+| `decimal_odds` | Available back odds supplied in the input |
+| `model_probability` | Model's estimated chance of winning |
+| `outcome` | Final result, used for evaluation |
+| `source` | Source of the quote |
+| `data_kind` | Synthetic or historical data label |
 
-- Effective odds: `o_eff = o - s` (must exceed 1)
-- Raw implied probability: `1/o`
-- Break-even probability including costs: `1 / (1 + (o_eff - 1)*(1-c))`
-- Model-estimated expected ROI: `p*(o_eff-1)*(1-c) - (1-p)`
-- Unit-stake realized payoff (hypothetical): `+(o_eff-1)*(1-c)` on win, `-1` on loss
+The app checks the input format and timing, but it cannot independently confirm that uploaded historical prices were actually available to bet on or that the model probabilities were generated without future information.
 
-`market_devig` demonstrates proportional two-way margin removal, which is meaningful **only when the opposing selections are simultaneous**. Backtesting uses cost-adjusted break-even instead of using no-vig probability as a fill price.
+## Limitations and what I learned
 
-## What the prototype does
+The biggest challenge was making sure the historical data could support a fair comparison between cricket predictions and betting prices.
 
-- Validates quote schema, duplicate keys, future quotes, freshness, odds and probabilities.
-- Makes match-disjoint chronological splits and selects the latest 30% of matches for the demo holdout.
-- Calculates cost-aware EV and price-implied probabilities; takes the earliest qualifying quote once per match.
-- Simulates unit stakes, win/loss payoffs, total P/L and ROI; displays descriptive calibration bins.
-- Includes explicit **synthetic data** labelling and unit tests for look-ahead rejection and payout math.
+A few important limitations remain.
 
-## What it does *not* establish
+**Last-traded prices are not necessarily available betting odds.** They show the prices at which past trades occurred, but not whether I could have placed a new bet at those prices.
 
-- The model probability quality: supplied probabilities are not retrained by this project; `model_probability` must come from an independently validated, chronologically trained as-of model.
-- Realistic fill probability, queue position, market liquidity, bet rejection, exchange delays, suspensions, withdrawals, matching, bankroll solvency, settlement schedule, or limits.
-- Valid independent confidence intervals: states from the same match are correlated, and the UI's cumulative P/L is arranged by decision time, not actual settlement time.
-- An optimal strategy: thresholds and costs can be adjusted interactively, which invalidates an untouched holdout if selected by looking at test performance. Freeze settings on earlier data before testing.
+**Match identities still need verification.** Matching teams and dates helps identify possible fixtures, but it does not guarantee that every market has been linked correctly.
 
-## Next research milestones (for a serious trading portfolio)
+**Cricket events and market prices need accurate timing.** I cannot safely compare a model prediction after a wicket with a market price recorded before that wicket.
 
-1. Obtain appropriately licensed, timestamped **cricket match-odds exchange data**, documenting archive coverage, price types and trade volumes. Betfair Historical Data is a candidate, not included here.
-2. Map exchange market/runner IDs to Cricsheet matches and **genuine ball event timestamps**; measure and report alignment uncertainty, and drop ambiguous records.
-3. Generate genuine probability snapshots using Project 1 or a newly trained model with historical cutoff dates, avoiding retraining on the evaluation period.
-4. Compare *pre-registered* thresholds and baseline prices on a future, unseen chronological holdout. Include costs, liquidity and fill modelling.
-5. Add match-block bootstrap confidence intervals, calibration by probability band and innings phase, robustness checks and repeated holdout periods.
+**A proper historical trading backtest has not yet been completed.** The project does not establish that a betting strategy would have made money.
 
-## Data suppliers to investigate
+These limitations helped me understand why data quality, timestamps and realistic execution assumptions matter just as much as the prediction model itself.
 
-- [Cricsheet](https://cricsheet.org/downloads/) — ball-by-ball results/events (not betting quote timestamps)
-- [Betfair historical exchange portal](https://historicdata.betfair.com/) — timestamped historical market data; registration and potential paid access required
-- [Betfair historical data documentation](https://support.developer.betfair.com/hc/en-us/articles/360002407732-What-data-is-provided-by-the-Historical-Data-service)
-- [Decimal historical cricket and odds](https://www.decimaldatagroup.com/historical-cricket-data-and-odds) — request licensing and coverage details
+## Improvements needed
 
-## Responsibility
+The next step would be to verify more of the market-to-match links and obtain reliable ball-event timestamps and historical back/lay quotes.
 
-This project is for quantitative research and education. No real-money trading instructions, implied profit guarantees, or claims of demonstrated positive expected value are provided. Do not place bets based on the demo.
+With that information, I could compare predictions from my first project against the market at the correct times.
+
+I would then test a fixed strategy on matches kept separate from the data used to develop it, including commission and realistic execution assumptions.
+
+For now, this project demonstrates **historical cricket market analysis, data processing, SQL, Python and research methodology**, rather than a proven profitable trading system.
+
+## Data sources
+
+- [Cricsheet](https://cricsheet.org/) — T20 match and ball-by-ball data
+- [Betfair Historical Data](https://historicdata.betfair.com/) — Historical betting exchange market data
+
+The original historical exchange data is not distributed with this repository.
+
+**Author: Sugandhika Dontha**
